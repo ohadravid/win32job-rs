@@ -1,0 +1,9 @@
+[package]
+name = "win32job"
+version = "0.1.0"
+authors = ["Ohad Ravid <ohad.rv@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+winapi = { version = "0.3", features = ["handleapi", "winbase", "psapi", "processthreadsapi", "jobapi2"] }
+thiserror = "1.0"
