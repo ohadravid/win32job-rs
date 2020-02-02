@@ -1,8 +1,11 @@
 use std::mem;
-use winapi::um::winnt::{JOB_OBJECT_LIMIT_WORKINGSET, JOBOBJECT_BASIC_LIMIT_INFORMATION};
+use winapi::um::winnt::{JOB_OBJECT_LIMIT_WORKINGSET, JOBOBJECT_BASIC_LIMIT_INFORMATION,
+                        JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE};
 use crate::{Job, JobError};
 
 impl Job {
+    /// Causes all processes associated with the job
+    /// to use the same minimum and maximum working set sizes
     pub fn limit_working_memory(&self, min: usize, max: usize) -> Result<(), JobError> {
         let mut info = self.basic_limit_info()?;
 
@@ -14,6 +17,16 @@ impl Job {
         self.set_basic_limit_info(&mut info)
     }
 
+    /// Causes all processes associated with the job to terminate
+    /// when the last handle to the job is closed.
+    pub fn limit_kill_on_job_close(&self) -> Result<(), JobError> {
+        let mut info = self.extended_limit_info()?;
+        info.BasicLimitInformation.LimitFlags |= JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+
+        self.set_extended_limit_info(&mut info)
+    }
+
+    /// Clear all limits set for this job.
     pub fn clear_limits(&self) -> Result<(), JobError> {
         let mut info: JOBOBJECT_BASIC_LIMIT_INFORMATION = unsafe { mem::zeroed() };
 
@@ -53,6 +66,21 @@ mod tests {
             assert!(memory_info.WorkingSetSize <= max);
 
             job.clear_limits().unwrap();
+        }
+    }
+
+    rusty_fork_test! {
+        #[test]
+        fn kill_on_job_close_limits() {
+            let job = Job::create().unwrap();
+            job.limit_kill_on_job_close().unwrap();
+
+            job.assign_current_process().unwrap();
+
+            drop(job);
+
+            // Never reached.
+            panic!();
         }
     }
 }

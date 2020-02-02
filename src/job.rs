@@ -62,6 +62,45 @@ impl Job {
         }
     }
 
+    pub fn set_extended_limit_info(
+        &self,
+        basic_info: &mut JOBOBJECT_EXTENDED_LIMIT_INFORMATION,
+    ) -> Result<(), JobError> {
+        let return_value = unsafe {
+            SetInformationJobObject(
+                self.handle,
+                JobObjectExtendedLimitInformation,
+                basic_info as *mut _ as LPVOID,
+                mem::size_of_val(basic_info) as DWORD,
+            )
+        };
+
+        if return_value == 0 {
+            Err(JobError::SetInfoFailed(io::Error::last_os_error()))
+        } else {
+            Ok(())
+        }
+    }
+
+    pub fn extended_limit_info(&self) -> Result<JOBOBJECT_EXTENDED_LIMIT_INFORMATION, JobError> {
+        let mut info: JOBOBJECT_EXTENDED_LIMIT_INFORMATION = unsafe { mem::zeroed() };
+        let return_value = unsafe {
+            QueryInformationJobObject(
+                self.handle,
+                JobObjectExtendedLimitInformation,
+                &mut info as *mut _ as LPVOID,
+                mem::size_of_val(&info) as DWORD,
+                0 as *mut _,
+            )
+        };
+
+        if return_value == 0 {
+            Err(JobError::GetInfoFailed(io::Error::last_os_error()))
+        } else {
+            Ok(info)
+        }
+    }
+
     pub fn assign_process(&self, proc_handle: HANDLE) -> Result<(), JobError> {
         let return_value = unsafe { AssignProcessToJobObject(self.handle, proc_handle) };
 
@@ -129,5 +168,16 @@ mod tests {
         // Clear limits.
         info.LimitFlags = 0;
         job.set_basic_limit_info(&mut info).unwrap();
+    }
+
+    #[test]
+    fn extended_info() {
+        let job = Job::create().unwrap();
+
+        let mut info = job.extended_limit_info().unwrap();
+
+        assert_eq!(info.BasicLimitInformation.LimitFlags, 0);
+
+        job.set_extended_limit_info(&mut info).unwrap();
     }
 }
