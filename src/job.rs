@@ -143,7 +143,6 @@ mod tests {
         // This is the default.
         assert_eq!(info.SchedulingClass, 5);
 
-        info.SchedulingClass = 3;
         info.MinimumWorkingSetSize = 1 * 1024 * 1024;
         info.MaximumWorkingSetSize = 4 * 1024 * 1024;
 
