@@ -26,6 +26,8 @@ impl Job {
     }
 
     /// Create an anonymous job object and sets it's limit according to `info`.
+    /// Note: This method shouldn't change the provided `info`, but the internal Windows API
+    /// require a mutable pointer, which means this function requires &mut as well.
     pub fn create_with_limit_info(info: &mut ExtendedLimitInfo) -> Result<Self, JobError> {
         let job = Self::create()?;
         job.set_extended_limit_info(info)?;
@@ -70,6 +72,8 @@ impl Job {
     }
 
     /// Set the basic and extended limit information for a job object.
+    /// Note: This method shouldn't change the provided `info`, but the internal Windows API
+    /// require a mutable pointer, which means this function requires &mut as well.
     pub fn set_extended_limit_info(&self, info: &mut ExtendedLimitInfo) -> Result<(), JobError> {
         let return_value = unsafe {
             SetInformationJobObject(
