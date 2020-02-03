@@ -59,6 +59,8 @@ mod tests {
         job.assign_current_process().unwrap();
 
         let pids = job.query_process_id_list().unwrap();
-        assert_eq!(pids.len(), 1);
+
+        // It's not equal to 1 because sometime we "catch" `rusty_fork_test` sub procs.
+        assert!(pids.len() >= 1);
     }
 }

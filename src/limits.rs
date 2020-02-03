@@ -23,6 +23,9 @@ impl Default for ExtendedLimitInfo {
     }
 }
 
+/// Contains basic and extended limit information for a job object, with helper methods for
+/// easy limit manipulation. To apply limits, pass the instance of this struct to
+/// `Job::create_with_limit_info` or `job.set_extended_limit_info`.
 impl ExtendedLimitInfo {
     /// Return an empty extended info objects, without any limits.
     pub fn new() -> Self {
@@ -52,9 +55,25 @@ impl ExtendedLimitInfo {
     }
 
     /// Causes all processes associated with the job to use the same priority class.
+    /// Note: Processes and threads cannot modify their priority class.
+    /// The calling process must enable the SE_INC_BASE_PRIORITY_NAME privilege.
     pub fn limit_priority_class(&mut self, priority_class: PriorityClass) -> &mut Self {
         self.0.BasicLimitInformation.PriorityClass = priority_class as u32;
         self.0.BasicLimitInformation.LimitFlags |= JOB_OBJECT_LIMIT_PRIORITY_CLASS;
+
+        self
+    }
+
+    /// Causes all processes in the job to use the same scheduling class.
+    /// The valid values are 0 to 9.
+    /// Use 0 for the least favorable scheduling class relative to other threads,
+    /// and 9 for the most favorable scheduling class relative to other threads.
+    /// By default, this value is 5.
+    /// Note: To use a scheduling class greater than 5,
+    /// the calling process must enable the SE_INC_BASE_PRIORITY_NAME privilege.
+    pub fn limit_scheduling_class(&mut self, scheduling_class: u8) -> &mut Self {
+        self.0.BasicLimitInformation.SchedulingClass = scheduling_class as u32;
+        self.0.BasicLimitInformation.LimitFlags |= JOB_OBJECT_LIMIT_SCHEDULING_CLASS;
 
         self
     }
@@ -67,7 +86,7 @@ impl ExtendedLimitInfo {
         self
     }
 
-    /// Clear all limits set for this job.
+    /// Clear all limits.
     pub fn clear_limits(&mut self) -> &mut Self {
         self.0.BasicLimitInformation.LimitFlags = 0;
 
@@ -146,6 +165,23 @@ mod tests {
             let info = job.query_extended_limit_info().unwrap();
 
             assert_eq!(info.0.BasicLimitInformation.PriorityClass, PriorityClass::BelowNormal as u32);
+        }
+    }
+
+    rusty_fork_test! {
+        #[test]
+        fn scheduling_class_limits() {
+            let job = Job::create().unwrap();
+
+            let mut info = job.query_extended_limit_info().unwrap();
+
+            info.limit_scheduling_class(1);
+
+            job.set_extended_limit_info(&mut info).unwrap();
+
+            let info = job.query_extended_limit_info().unwrap();
+
+            assert_eq!(info.0.BasicLimitInformation.SchedulingClass, 1);
         }
     }
 
