@@ -5,7 +5,7 @@ authors = ["Ohad Ravid <ohad.rv@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-winapi = { version = "0.3", features = ["handleapi", "winbase", "psapi", "processthreadsapi", "jobapi2"] }
+winapi = { version = "0.3", features = ["handleapi", "winbase", "psapi", "processthreadsapi", "jobapi2", "basetsd"] }
 thiserror = "1.0"
 
 [dev-dependencies]

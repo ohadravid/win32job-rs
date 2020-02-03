@@ -13,6 +13,7 @@ pub struct Job {
 }
 
 impl Job {
+    /// Create an anonymous job object.
     pub fn create() -> Result<Self, JobError> {
         let job_handle = unsafe { CreateJobObjectW(ptr::null_mut(), ptr::null()) };
 
@@ -23,6 +24,13 @@ impl Job {
         Ok(Job { handle: job_handle })
     }
 
+    /// Return the underlying handle to the job.
+    pub fn handle(&self) -> HANDLE {
+        self.handle
+    }
+
+    /// Return a basic limit information for a job object.
+    /// See also https://docs.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-jobobject_basic_limit_information
     pub fn basic_limit_info(&self) -> Result<JOBOBJECT_BASIC_LIMIT_INFORMATION, JobError> {
         let mut info: JOBOBJECT_BASIC_LIMIT_INFORMATION = unsafe { mem::zeroed() };
         let return_value = unsafe {
@@ -42,6 +50,7 @@ impl Job {
         }
     }
 
+    /// Return the basic and extended limit information for a job object.
     pub fn set_basic_limit_info(
         &self,
         basic_info: &mut JOBOBJECT_BASIC_LIMIT_INFORMATION,
@@ -62,6 +71,28 @@ impl Job {
         }
     }
 
+    /// Return basic and extended limit information for a job object.
+    /// See also https://docs.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-jobobject_extended_limit_information
+    pub fn extended_limit_info(&self) -> Result<JOBOBJECT_EXTENDED_LIMIT_INFORMATION, JobError> {
+        let mut info: JOBOBJECT_EXTENDED_LIMIT_INFORMATION = unsafe { mem::zeroed() };
+        let return_value = unsafe {
+            QueryInformationJobObject(
+                self.handle,
+                JobObjectExtendedLimitInformation,
+                &mut info as *mut _ as LPVOID,
+                mem::size_of_val(&info) as DWORD,
+                0 as *mut _,
+            )
+        };
+
+        if return_value == 0 {
+            Err(JobError::GetInfoFailed(io::Error::last_os_error()))
+        } else {
+            Ok(info)
+        }
+    }
+
+    /// Set the basic and extended limit information for a job object.
     pub fn set_extended_limit_info(
         &self,
         basic_info: &mut JOBOBJECT_EXTENDED_LIMIT_INFORMATION,
@@ -82,25 +113,8 @@ impl Job {
         }
     }
 
-    pub fn extended_limit_info(&self) -> Result<JOBOBJECT_EXTENDED_LIMIT_INFORMATION, JobError> {
-        let mut info: JOBOBJECT_EXTENDED_LIMIT_INFORMATION = unsafe { mem::zeroed() };
-        let return_value = unsafe {
-            QueryInformationJobObject(
-                self.handle,
-                JobObjectExtendedLimitInformation,
-                &mut info as *mut _ as LPVOID,
-                mem::size_of_val(&info) as DWORD,
-                0 as *mut _,
-            )
-        };
-
-        if return_value == 0 {
-            Err(JobError::GetInfoFailed(io::Error::last_os_error()))
-        } else {
-            Ok(info)
-        }
-    }
-
+    /// Assigns a process to the job object.
+    /// See also https://docs.microsoft.com/en-us/windows/win32/api/jobapi2/nf-jobapi2-assignprocesstojobobject
     pub fn assign_process(&self, proc_handle: HANDLE) -> Result<(), JobError> {
         let return_value = unsafe { AssignProcessToJobObject(self.handle, proc_handle) };
 
@@ -111,6 +125,7 @@ impl Job {
         }
     }
 
+    /// Assigns the current process to the job object.
     pub fn assign_current_process(&self) -> Result<(), JobError> {
         let current_proc_handle = get_current_process();
 

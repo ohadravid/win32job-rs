@@ -1,6 +1,7 @@
 use std::mem;
 use winapi::um::winnt::{JOB_OBJECT_LIMIT_WORKINGSET, JOBOBJECT_BASIC_LIMIT_INFORMATION,
-                        JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE, JOB_OBJECT_LIMIT_PRIORITY_CLASS};
+                        JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE, JOB_OBJECT_LIMIT_PRIORITY_CLASS,
+                        JOB_OBJECT_LIMIT_AFFINITY};
 use winapi::um::winbase::{NORMAL_PRIORITY_CLASS,
                           IDLE_PRIORITY_CLASS,
                           HIGH_PRIORITY_CLASS,
@@ -53,6 +54,15 @@ impl Job {
         self.set_basic_limit_info(&mut info)
     }
 
+    /// Causes all processes associated with the job to use the same processor affinity.
+    pub fn limit_affinity(&self, affinity: usize) -> Result<(), JobError> {
+        let mut info = self.basic_limit_info()?;
+
+        info.Affinity = affinity;
+        info.LimitFlags |= JOB_OBJECT_LIMIT_AFFINITY;
+
+        self.set_basic_limit_info(&mut info)
+    }
 
     /// Clear all limits set for this job.
     pub fn clear_limits(&self) -> Result<(), JobError> {
@@ -67,7 +77,7 @@ impl Job {
 
 #[cfg(test)]
 mod tests {
-    use crate::utils::{get_current_process, get_process_memory_info};
+    use crate::utils::{get_current_process, get_process_memory_info, get_process_affinity_mask};
     use crate::{Job, PriorityClass};
     use rusty_fork::rusty_fork_test;
 
@@ -121,6 +131,23 @@ mod tests {
             let info = job.basic_limit_info().unwrap();
 
             assert_eq!(info.PriorityClass, PriorityClass::BelowNormal as u32);
+        }
+    }
+
+    rusty_fork_test! {
+        #[test]
+        fn affinity_limits() {
+            let job = Job::create().unwrap();
+            job.limit_affinity(1).unwrap();
+
+
+            let (proc_affinity, _) = get_process_affinity_mask(get_current_process()).unwrap();
+            assert_ne!(proc_affinity, 1);
+
+            job.assign_current_process().unwrap();
+
+            let (proc_affinity, _) = get_process_affinity_mask(get_current_process()).unwrap();
+            assert_eq!(proc_affinity, 1);
         }
     }
 }

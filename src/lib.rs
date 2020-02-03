@@ -54,6 +54,7 @@ mod error;
 mod job;
 mod limits;
 pub mod utils;
+pub mod query;
 
 pub use crate::job::Job;
 pub use crate::error::JobError;
