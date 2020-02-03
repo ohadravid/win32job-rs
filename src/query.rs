@@ -1,8 +1,8 @@
-use std::{mem, io};
+use std::{io, mem};
+use winapi::shared::basetsd::*;
+use winapi::shared::minwindef::*;
 use winapi::um::jobapi2::*;
 use winapi::um::winnt::*;
-use winapi::shared::minwindef::*;
-use winapi::shared::basetsd::*;
 
 use crate::{Job, JobError};
 
@@ -31,11 +31,12 @@ impl Job {
                 JobObjectBasicProcessIdList,
                 &mut proc_id_list as *mut _ as LPVOID,
                 mem::size_of_val(&proc_id_list) as DWORD,
-                0 as *mut _)
+                0 as *mut _,
+            )
         };
 
         if return_value == 0 {
-            return Err(JobError::AssignFailed(io::Error::last_os_error()));
+            return Err(JobError::GetInfoFailed(io::Error::last_os_error()));
         }
 
         let list = &proc_id_list.list[..proc_id_list.header.NumberOfProcessIdsInList as usize];

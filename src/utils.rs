@@ -1,8 +1,8 @@
 use std::{io, mem};
 use winapi::um::psapi::PROCESS_MEMORY_COUNTERS;
+use winapi::um::winbase::GetProcessAffinityMask;
 use winapi::um::winnt::*;
 use winapi::um::{processthreadsapi, psapi};
-use winapi::um::winbase::GetProcessAffinityMask;
 
 /// Return a pseudo handle to the current process.
 /// See also https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getcurrentprocess
@@ -33,9 +33,7 @@ pub fn get_process_memory_info(
 
 /// Retrieves the process affinity mask for the specified process and the system affinity mask for the system.
 /// See also https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-getprocessaffinitymask
-pub fn get_process_affinity_mask(
-    process_handle: HANDLE
-) -> Result<(usize, usize), io::Error> {
+pub fn get_process_affinity_mask(process_handle: HANDLE) -> Result<(usize, usize), io::Error> {
     let mut process_affinity_mask = 0usize;
     let mut system_affinity_mask = 0usize;
 

@@ -1,15 +1,10 @@
-use std::mem;
-use winapi::um::winnt::{JOB_OBJECT_LIMIT_WORKINGSET, JOBOBJECT_BASIC_LIMIT_INFORMATION,
-                        JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE, JOB_OBJECT_LIMIT_PRIORITY_CLASS,
-                        JOB_OBJECT_LIMIT_AFFINITY};
-use winapi::um::winbase::{NORMAL_PRIORITY_CLASS,
-                          IDLE_PRIORITY_CLASS,
-                          HIGH_PRIORITY_CLASS,
-                          REALTIME_PRIORITY_CLASS,
-                          BELOW_NORMAL_PRIORITY_CLASS,
-                          ABOVE_NORMAL_PRIORITY_CLASS};
+use winapi::um::winbase::{
+    ABOVE_NORMAL_PRIORITY_CLASS, BELOW_NORMAL_PRIORITY_CLASS, HIGH_PRIORITY_CLASS,
+    IDLE_PRIORITY_CLASS, NORMAL_PRIORITY_CLASS, REALTIME_PRIORITY_CLASS,
+};
+use winapi::um::winnt::*;
 
-use crate::{Job, JobError};
+pub struct ExtendedLimitInfo(pub JOBOBJECT_EXTENDED_LIMIT_INFORMATION);
 
 #[repr(u32)]
 pub enum PriorityClass {
@@ -21,63 +16,53 @@ pub enum PriorityClass {
     AboveNormal = ABOVE_NORMAL_PRIORITY_CLASS,
 }
 
-impl Job {
+impl ExtendedLimitInfo {
     /// Causes all processes associated with the job
     /// to use the same minimum and maximum working set sizes
-    pub fn limit_working_memory(&self, min: usize, max: usize) -> Result<(), JobError> {
-        let mut info = self.basic_limit_info()?;
+    pub fn limit_working_memory(&mut self, min: usize, max: usize) -> &mut Self {
+        self.0.BasicLimitInformation.MinimumWorkingSetSize = min;
+        self.0.BasicLimitInformation.MaximumWorkingSetSize = max;
 
-        info.MinimumWorkingSetSize = min;
-        info.MaximumWorkingSetSize = max;
+        self.0.BasicLimitInformation.LimitFlags |= JOB_OBJECT_LIMIT_WORKINGSET;
 
-        info.LimitFlags |= JOB_OBJECT_LIMIT_WORKINGSET;
-
-        self.set_basic_limit_info(&mut info)
+        self
     }
 
     /// Causes all processes associated with the job to terminate
     /// when the last handle to the job is closed.
-    pub fn limit_kill_on_job_close(&self) -> Result<(), JobError> {
-        let mut info = self.extended_limit_info()?;
-        info.BasicLimitInformation.LimitFlags |= JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+    pub fn limit_kill_on_job_close(&mut self) -> &mut Self {
+        self.0.BasicLimitInformation.LimitFlags |= JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
 
-        self.set_extended_limit_info(&mut info)
+        self
     }
 
     /// Causes all processes associated with the job to use the same priority class.
-    pub fn limit_priority_class(&self, priority_class: PriorityClass) -> Result<(), JobError> {
-        let mut info = self.basic_limit_info()?;
+    pub fn limit_priority_class(&mut self, priority_class: PriorityClass) -> &mut Self {
+        self.0.BasicLimitInformation.PriorityClass = priority_class as u32;
+        self.0.BasicLimitInformation.LimitFlags |= JOB_OBJECT_LIMIT_PRIORITY_CLASS;
 
-        info.PriorityClass = priority_class as u32;
-        info.LimitFlags |= JOB_OBJECT_LIMIT_PRIORITY_CLASS;
-
-        self.set_basic_limit_info(&mut info)
+        self
     }
 
     /// Causes all processes associated with the job to use the same processor affinity.
-    pub fn limit_affinity(&self, affinity: usize) -> Result<(), JobError> {
-        let mut info = self.basic_limit_info()?;
+    pub fn limit_affinity(&mut self, affinity: usize) -> &mut Self {
+        self.0.BasicLimitInformation.Affinity = affinity;
+        self.0.BasicLimitInformation.LimitFlags |= JOB_OBJECT_LIMIT_AFFINITY;
 
-        info.Affinity = affinity;
-        info.LimitFlags |= JOB_OBJECT_LIMIT_AFFINITY;
-
-        self.set_basic_limit_info(&mut info)
+        self
     }
 
     /// Clear all limits set for this job.
-    pub fn clear_limits(&self) -> Result<(), JobError> {
-        let mut info: JOBOBJECT_BASIC_LIMIT_INFORMATION = unsafe { mem::zeroed() };
+    pub fn clear_limits(&mut self) -> &mut Self {
+        self.0.BasicLimitInformation.LimitFlags = 0;
 
-        // Clear limits explicitly.
-        info.LimitFlags = 0;
-
-        self.set_basic_limit_info(&mut info)
+        self
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::utils::{get_current_process, get_process_memory_info, get_process_affinity_mask};
+    use crate::utils::{get_current_process, get_process_affinity_mask, get_process_memory_info};
     use crate::{Job, PriorityClass};
     use rusty_fork::rusty_fork_test;
 
@@ -85,9 +70,13 @@ mod tests {
         #[test]
         fn working_mem_limits() {
             let job = Job::create().unwrap();
+            let mut info = job.query_extended_limit_info().unwrap();
+
             let min = 1 * 1024 * 1024;
             let max = 4 * 1024 * 1024;
-            job.limit_working_memory(min, max).unwrap();
+            info.limit_working_memory(min, max);
+
+            job.set_extended_limit_info(&mut info).unwrap();
 
             let test_vec_size = 8 * 1024 * 1024;
             let mut big_vec: Vec<u8> = Vec::with_capacity(test_vec_size);
@@ -103,7 +92,9 @@ mod tests {
 
             assert!(memory_info.WorkingSetSize <= max);
 
-            job.clear_limits().unwrap();
+            info.clear_limits();
+
+            job.set_extended_limit_info(&mut info).unwrap();
         }
     }
 
@@ -111,7 +102,11 @@ mod tests {
         #[test]
         fn kill_on_job_close_limits() {
             let job = Job::create().unwrap();
-            job.limit_kill_on_job_close().unwrap();
+            let mut info = job.query_extended_limit_info().unwrap();
+
+            info.limit_kill_on_job_close();
+
+            job.set_extended_limit_info(&mut info).unwrap();
 
             job.assign_current_process().unwrap();
 
@@ -126,11 +121,16 @@ mod tests {
         #[test]
         fn priority_class_limits() {
             let job = Job::create().unwrap();
-            job.limit_priority_class(PriorityClass::BelowNormal).unwrap();
 
-            let info = job.basic_limit_info().unwrap();
+            let mut info = job.query_extended_limit_info().unwrap();
 
-            assert_eq!(info.PriorityClass, PriorityClass::BelowNormal as u32);
+            info.limit_priority_class(PriorityClass::BelowNormal);
+
+            job.set_extended_limit_info(&mut info).unwrap();
+
+            let info = job.query_extended_limit_info().unwrap();
+
+            assert_eq!(info.0.BasicLimitInformation.PriorityClass, PriorityClass::BelowNormal as u32);
         }
     }
 
@@ -138,8 +138,12 @@ mod tests {
         #[test]
         fn affinity_limits() {
             let job = Job::create().unwrap();
-            job.limit_affinity(1).unwrap();
 
+            let mut info = job.query_extended_limit_info().unwrap();
+
+            info.limit_affinity(1);
+
+            job.set_extended_limit_info(&mut info).unwrap();
 
             let (proc_affinity, _) = get_process_affinity_mask(get_current_process()).unwrap();
             assert_ne!(proc_affinity, 1);

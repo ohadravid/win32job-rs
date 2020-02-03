@@ -16,10 +16,14 @@
 //! # fn main() -> Result<(), JobError> {
 //! use winapi::um::winnt::JOB_OBJECT_LIMIT_WORKINGSET;
 //! let job = Job::create()?;
+//! let mut info = job.query_extended_limit_info()?;
+//! info.limit_working_memory(1 * 1024 * 1024,  4 * 1024 * 1024)
+//!     .limit_priority_class(PriorityClass::BelowNormal);
 //!
-//! job.limit_working_memory(1 * 1024 * 1024,  4 * 1024 * 1024)?;
+//! job.set_extended_limit_info(&mut info)?;
 //! job.assign_current_process()?;
-//! #   job.clear_limits()?;
+//! #   info.clear_limits();
+//! #   job.set_extended_limit_info(&mut info)?;
 //! #   Ok(())
 //! # }
 //! ```
@@ -36,26 +40,28 @@
 //! # fn main() -> Result<(), JobError> {
 //! use winapi::um::winnt::JOB_OBJECT_LIMIT_WORKINGSET;
 //! let job = Job::create()?;
-//! let mut info = job.basic_limit_info()?;
+//! let mut info = job.query_extended_limit_info()?;
 //!
-//! info.MinimumWorkingSetSize = 1 * 1024 * 1024;
-//! info.MaximumWorkingSetSize = 4 * 1024 * 1024;
-//! info.LimitFlags |= JOB_OBJECT_LIMIT_WORKINGSET;
+//! info.0.BasicLimitInformation.MinimumWorkingSetSize = 1 * 1024 * 1024;
+//! info.0.BasicLimitInformation.MaximumWorkingSetSize = 4 * 1024 * 1024;
+//! info.0.BasicLimitInformation.LimitFlags |= JOB_OBJECT_LIMIT_WORKINGSET;
 //!
-//! job.set_basic_limit_info(&mut info)?;
+//! job.set_extended_limit_info(&mut info)?;
 //! job.assign_current_process()?;
-//! #   job.clear_limits()?;
+//! #   info.clear_limits();
+//! #   job.set_extended_limit_info(&mut info)?;
 //! #   Ok(())
 //! # }
 //! ```
 #[cfg(test)]
-#[macro_use] extern crate rusty_fork;
+#[macro_use]
+extern crate rusty_fork;
 mod error;
 mod job;
 mod limits;
-pub mod utils;
 pub mod query;
+pub mod utils;
 
-pub use crate::job::Job;
 pub use crate::error::JobError;
-pub use crate::limits::PriorityClass;
+pub use crate::job::Job;
+pub use crate::limits::{ExtendedLimitInfo, PriorityClass};
