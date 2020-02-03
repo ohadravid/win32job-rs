@@ -1,8 +1,21 @@
 [package]
 name = "win32job"
-version = "0.1.0"
+version = "1.0.0"
 authors = ["Ohad Ravid <ohad.rv@gmail.com>"]
 edition = "2018"
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+documentation = "https://docs.rs/crate/win32job"
+homepage = "https://github.com/ohadravid/win32job-rs"
+repository = "https://github.com/ohadravid/win32job-rs"
+description = """
+A safe API for Windows' job objects.
+"""
+categories = ["api-bindings", "os::windows-apis"]
+keywords = ["job", "job object", "win32"]
+
+[package.metadata.docs.rs]
+default-target = "x86_64-pc-windows-msvc"
 
 [dependencies]
 winapi = { version = "0.3", features = ["handleapi", "winbase", "psapi", "processthreadsapi", "jobapi2", "basetsd"] }
@@ -10,3 +23,4 @@ thiserror = "1.0"
 
 [dev-dependencies]
 rusty-fork = "0.2.1"
+little-skeptic = "0.15"

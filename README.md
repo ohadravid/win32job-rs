@@ -1,6 +1,67 @@
 # win32job
+![crates.io](https://img.shields.io/crates/v/win32job.svg)
 
-TODO: Write this.
+[Documentation](https://docs.rs/crate/win32job)
+
+A safe API for Windows' [job objects](https://docs.microsoft.com/en-us/windows/win32/api/jobapi2/nf-jobapi2-createjobobjectw), 
+which can be used to set various limits to processes associated with them. 
+
+```toml
+# Cargo.toml
+[dependencies]
+win32job = "1"
+```
+
+
+## Examples
+
+Limit the amount of memory that for this process (allocating more memory is still possible, but it will be paged):
+
+```rust
+use win32job::Job;
+
+fn main() -> Result<(), Box<dyn std::error::Error>>  {
+    let job = Job::create()?;
+    
+    let mut info = job.query_extended_limit_info()?;
+
+    info.limit_working_memory(1 * 1024 * 1024, 4 * 1024 * 1024);
+
+    job.set_extended_limit_info(&mut info)?;
+    
+    job.assign_current_process()?;
+    
+    Ok(())
+}
+```
+
+Force any created sub processes to exit when the main process exits: 
+
+```rust
+use win32job::Job;
+use std::process::Command;
+
+fn main() -> Result<(), Box<dyn std::error::Error>>  {
+    let job = Job::create()?;
+    
+    let mut info = job.query_extended_limit_info()?;
+
+    info.limit_kill_on_job_close();
+
+    job.set_extended_limit_info(&mut info)?;
+    
+    job.assign_current_process()?;
+
+    Command::new("cmd.exe")
+            .arg("/C")
+            .arg("ping -n 9999 127.0.0.1")
+            .spawn()?;
+
+    // The cmd will be killed once we exit, or `job` is dropped.
+    
+    Ok(())
+}
+```
 
 ## License
  

@@ -30,6 +30,8 @@ impl ExtendedLimitInfo {
 
     /// Causes all processes associated with the job to terminate
     /// when the last handle to the job is closed.
+    /// Note, that that `drop`ing the `Job` struct closes this handle, and if it's the only handle
+    /// to the job **the current process will terminate** if it's assign to that job.
     pub fn limit_kill_on_job_close(&mut self) -> &mut Self {
         self.0.BasicLimitInformation.LimitFlags |= JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
 
