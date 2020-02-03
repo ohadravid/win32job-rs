@@ -54,5 +54,7 @@ mod error;
 mod job;
 mod limits;
 pub mod utils;
+
 pub use crate::job::Job;
 pub use crate::error::JobError;
+pub use crate::limits::PriorityClass;
