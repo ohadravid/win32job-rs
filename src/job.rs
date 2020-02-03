@@ -25,20 +25,38 @@ impl Job {
         Ok(Job { handle: job_handle })
     }
 
+    /// Create an anonymous job object and sets it's limit according to `info`.
+    pub fn create_with_limit_info(info: &mut ExtendedLimitInfo) -> Result<Self, JobError> {
+        let job = Self::create()?;
+        job.set_extended_limit_info(info)?;
+
+        Ok(job)
+    }
+
     /// Return the underlying handle to the job.
+    /// Note that this handle will be closed one the `Job` objects is dropped.
     pub fn handle(&self) -> HANDLE {
         self.handle
+    }
+
+    /// Return the underlying handle to the job, consuming the job.
+    /// Note that the handle will NOT be closed, so it is the caller's responsibly to close it.
+    pub fn into_handle(self) -> HANDLE {
+        let job = mem::ManuallyDrop::new(self);
+
+        job.handle
     }
 
     /// Return basic and extended limit information for a job object.
     /// See also https://docs.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-jobobject_extended_limit_information
     pub fn query_extended_limit_info(&self) -> Result<ExtendedLimitInfo, JobError> {
-        let mut info: JOBOBJECT_EXTENDED_LIMIT_INFORMATION = unsafe { mem::zeroed() };
+        let mut info = ExtendedLimitInfo::new();
+
         let return_value = unsafe {
             QueryInformationJobObject(
                 self.handle,
                 JobObjectExtendedLimitInformation,
-                &mut info as *mut _ as LPVOID,
+                &mut info.0 as *mut _ as LPVOID,
                 mem::size_of_val(&info) as DWORD,
                 0 as *mut _,
             )
@@ -47,7 +65,7 @@ impl Job {
         if return_value == 0 {
             Err(JobError::GetInfoFailed(io::Error::last_os_error()))
         } else {
-            Ok(ExtendedLimitInfo(info))
+            Ok(info)
         }
     }
 

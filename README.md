@@ -18,17 +18,16 @@ win32job = "1"
 Limit the amount of memory that for this process (allocating more memory is still possible, but it will be paged):
 
 ```rust
-use win32job::Job;
+use win32job::{Job, ExtendedLimitInfo};
 
 fn main() -> Result<(), Box<dyn std::error::Error>>  {
-    let job = Job::create()?;
     
-    let mut info = job.query_extended_limit_info()?;
+    let mut info = ExtendedLimitInfo::new();
 
     info.limit_working_memory(1 * 1024 * 1024, 4 * 1024 * 1024);
 
-    job.set_extended_limit_info(&mut info)?;
-    
+    let job = Job::create_with_limit_info(&mut info)?;
+
     job.assign_current_process()?;
     
     Ok(())
@@ -67,7 +66,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>>  {
  
 The `win32job` crate is licensed under either of
 
-    Apache License, Version 2.0, (LICENSE-APACHE or http://www.apache.org/licenses/LICENSE-2.0)
-    MIT license (LICENSE-MIT or http://opensource.org/licenses/MIT)
+```text
+Apache License, Version 2.0, (LICENSE-APACHE or http://www.apache.org/licenses/LICENSE-2.0)
+MIT license (LICENSE-MIT or http://opensource.org/licenses/MIT)
+```
 
 at your option.

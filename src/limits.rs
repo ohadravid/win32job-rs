@@ -1,3 +1,4 @@
+use std::mem;
 use winapi::um::winbase::{
     ABOVE_NORMAL_PRIORITY_CLASS, BELOW_NORMAL_PRIORITY_CLASS, HIGH_PRIORITY_CLASS,
     IDLE_PRIORITY_CLASS, NORMAL_PRIORITY_CLASS, REALTIME_PRIORITY_CLASS,
@@ -16,7 +17,19 @@ pub enum PriorityClass {
     AboveNormal = ABOVE_NORMAL_PRIORITY_CLASS,
 }
 
+impl Default for ExtendedLimitInfo {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ExtendedLimitInfo {
+    /// Return an empty extended info objects, without any limits.
+    pub fn new() -> Self {
+        let inner: JOBOBJECT_EXTENDED_LIMIT_INFORMATION = unsafe { mem::zeroed() };
+        ExtendedLimitInfo(inner)
+    }
+
     /// Causes all processes associated with the job
     /// to use the same minimum and maximum working set sizes
     pub fn limit_working_memory(&mut self, min: usize, max: usize) -> &mut Self {

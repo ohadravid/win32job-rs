@@ -6,11 +6,28 @@
 //!
 //! # Using the higher level API
 //!
-//! The most basic API is getting and raw `JOBOBJECT_BASIC_LIMIT_INFORMATION`, modify it directly
-//! and set it back to the job.
+//! After getting a `ExtendedLimitInfo` object, either by querying the info of a job,
+//! or by create an empty one using `new()`, it is possible to use convenience methods to configure
+//! the required limits, and set the info to the job.
 //!
-//! It's important to remeber to set the needed `LimitFlags` for each limit used.
+//! ```edition2018
+//! # use win32job::*;
+//! # fn main() -> Result<(), JobError> {
+//! use winapi::um::winnt::JOB_OBJECT_LIMIT_WORKINGSET;
+//! let mut info = ExtendedLimitInfo::new();
 //!
+//! info.limit_working_memory(1 * 1024 * 1024,  4 * 1024 * 1024)
+//!     .limit_priority_class(PriorityClass::BelowNormal);
+//!
+//! let job = Job::create_with_limit_info(&mut info)?;
+//! job.assign_current_process()?;
+//! #   info.clear_limits();
+//! #   job.set_extended_limit_info(&mut info)?;
+//! #   Ok(())
+//! # }
+//! ```
+//!
+//! Which is equivalnent to:
 //! ```edition2018
 //! # use win32job::*;
 //! # fn main() -> Result<(), JobError> {
@@ -56,6 +73,7 @@
 #[cfg(test)]
 #[macro_use]
 extern crate rusty_fork;
+
 mod error;
 mod job;
 mod limits;
@@ -65,3 +83,16 @@ pub mod utils;
 pub use crate::error::JobError;
 pub use crate::job::Job;
 pub use crate::limits::{ExtendedLimitInfo, PriorityClass};
+
+// Cannot use `cfg(test)` here since `rustdoc` won't look at it.
+#[cfg(debug_assertions)]
+mod test_readme {
+    macro_rules! calculated_doc {
+        ($doc:expr, $id:ident) => {
+            #[doc = $doc]
+            enum $id {}
+        }
+    }
+
+    calculated_doc!(include_str!("../README.md"), _DoctestReadme);
+}
