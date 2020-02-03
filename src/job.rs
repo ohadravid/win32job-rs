@@ -34,7 +34,7 @@ impl Job {
     }
 
     /// Return the underlying handle to the job.
-    /// Note that this handle will be closed one the `Job` objects is dropped.
+    /// Note that this handle will be closed once the `Job` object is dropped.
     pub fn handle(&self) -> HANDLE {
         self.handle
     }
