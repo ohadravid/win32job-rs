@@ -12,7 +12,7 @@ description = """
 A safe API for Windows' job objects.
 """
 categories = ["api-bindings", "os::windows-apis"]
-keywords = ["job", "job object", "win32"]
+keywords = ["job", "job-object", "win32"]
 
 [package.metadata.docs.rs]
 default-target = "x86_64-pc-windows-msvc"
