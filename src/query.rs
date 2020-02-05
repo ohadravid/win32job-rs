@@ -13,7 +13,7 @@ struct ProcessIdList {
 }
 
 impl Job {
-    /// Process identifier list for a job object.
+    /// Return all the process identifiers for a job object.
     /// If the job is nested, the process identifier list consists of all processes
     /// associated with the job and its child jobs.
     pub fn query_process_id_list(&self) -> Result<Vec<usize>, JobError> {

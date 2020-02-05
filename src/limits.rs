@@ -56,7 +56,7 @@ impl ExtendedLimitInfo {
 
     /// Causes all processes associated with the job to use the same priority class.
     /// Note: Processes and threads cannot modify their priority class.
-    /// The calling process must enable the SE_INC_BASE_PRIORITY_NAME privilege.
+    /// The calling process must enable the `SE_INC_BASE_PRIORITY_NAME` privilege.
     pub fn limit_priority_class(&mut self, priority_class: PriorityClass) -> &mut Self {
         self.0.BasicLimitInformation.PriorityClass = priority_class as u32;
         self.0.BasicLimitInformation.LimitFlags |= JOB_OBJECT_LIMIT_PRIORITY_CLASS;
@@ -70,7 +70,7 @@ impl ExtendedLimitInfo {
     /// and 9 for the most favorable scheduling class relative to other threads.
     /// By default, this value is 5.
     /// Note: To use a scheduling class greater than 5,
-    /// the calling process must enable the SE_INC_BASE_PRIORITY_NAME privilege.
+    /// the calling process must enable the `SE_INC_BASE_PRIORITY_NAME` privilege.
     pub fn limit_scheduling_class(&mut self, scheduling_class: u8) -> &mut Self {
         self.0.BasicLimitInformation.SchedulingClass = scheduling_class as u32;
         self.0.BasicLimitInformation.LimitFlags |= JOB_OBJECT_LIMIT_SCHEDULING_CLASS;

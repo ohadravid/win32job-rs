@@ -2,18 +2,18 @@
 //!
 //! A safe API for Windows' job objects, which can be used to set various limits to
 //! processes associated with them.
-//! See also https://docs.microsoft.com/en-us/windows/win32/api/jobapi2/nf-jobapi2-createjobobjectw
+//! See also [Microsoft Docs](https://docs.microsoft.com/en-us/windows/win32/api/jobapi2/nf-jobapi2-createjobobjectw).
 //!
 //! # Using the higher level API
 //!
-//! After getting a `ExtendedLimitInfo` object, either by querying the info of a job,
-//! or by create an empty one using `new()`, it is possible to use convenience methods to configure
-//! the required limits, and set the info to the job.
+//! After getting an `ExtendedLimitInfo` object, either by querying the info of a job
+//! or by creating an empty one using `new()`, use helper methods to configure
+//! the required limits, and finally set the info to the job.
 //!
 //! ```edition2018
-//! # use win32job::*;
+//! use win32job::*;
 //! # fn main() -> Result<(), JobError> {
-//! use winapi::um::winnt::JOB_OBJECT_LIMIT_WORKINGSET;
+//!
 //! let mut info = ExtendedLimitInfo::new();
 //!
 //! info.limit_working_memory(1 * 1024 * 1024,  4 * 1024 * 1024)
@@ -29,11 +29,12 @@
 //!
 //! Which is equivalnent to:
 //! ```edition2018
-//! # use win32job::*;
+//! use win32job::*;
 //! # fn main() -> Result<(), JobError> {
-//! use winapi::um::winnt::JOB_OBJECT_LIMIT_WORKINGSET;
+//!
 //! let job = Job::create()?;
 //! let mut info = job.query_extended_limit_info()?;
+//!
 //! info.limit_working_memory(1 * 1024 * 1024,  4 * 1024 * 1024)
 //!     .limit_priority_class(PriorityClass::BelowNormal);
 //!
@@ -47,15 +48,16 @@
 //!
 //! # Using the low level API
 //!
-//! The most basic API is getting and raw `JOBOBJECT_BASIC_LIMIT_INFORMATION`, modify it directly
-//! and set it back to the job.
+//! The most basic API is getting an `ExtendedLimitInfo` object and
+//! manipulating the raw `JOBOBJECT_BASIC_LIMIT_INFORMATION`, and then set it back to the job.
 //!
 //! It's important to remeber to set the needed `LimitFlags` for each limit used.
 //!
 //! ```edition2018
-//! # use win32job::*;
+//! use win32job::*;
 //! # fn main() -> Result<(), JobError> {
 //! use winapi::um::winnt::JOB_OBJECT_LIMIT_WORKINGSET;
+//!
 //! let job = Job::create()?;
 //! let mut info = job.query_extended_limit_info()?;
 //!
@@ -77,7 +79,7 @@ extern crate rusty_fork;
 mod error;
 mod job;
 mod limits;
-pub mod query;
+mod query;
 pub mod utils;
 
 pub use crate::error::JobError;

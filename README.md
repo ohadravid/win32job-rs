@@ -21,7 +21,6 @@ Limit the amount of memory that for this process (allocating more memory is stil
 use win32job::{Job, ExtendedLimitInfo};
 
 fn main() -> Result<(), Box<dyn std::error::Error>>  {
-    
     let mut info = ExtendedLimitInfo::new();
 
     info.limit_working_memory(1 * 1024 * 1024, 4 * 1024 * 1024);

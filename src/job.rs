@@ -50,7 +50,7 @@ impl Job {
     }
 
     /// Return basic and extended limit information for a job object.
-    /// See also https://docs.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-jobobject_extended_limit_information
+    /// See also [Microsoft Docs](https://docs.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-jobobject_extended_limit_information).
     pub fn query_extended_limit_info(&self) -> Result<ExtendedLimitInfo, JobError> {
         let mut info = ExtendedLimitInfo::new();
 
@@ -92,7 +92,7 @@ impl Job {
     }
 
     /// Assigns a process to the job object.
-    /// See also https://docs.microsoft.com/en-us/windows/win32/api/jobapi2/nf-jobapi2-assignprocesstojobobject
+    /// See also [Microsoft Docs](https://docs.microsoft.com/en-us/windows/win32/api/jobapi2/nf-jobapi2-assignprocesstojobobject).
     pub fn assign_process(&self, proc_handle: HANDLE) -> Result<(), JobError> {
         let return_value = unsafe { AssignProcessToJobObject(self.handle, proc_handle) };
 
