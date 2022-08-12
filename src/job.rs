@@ -13,6 +13,9 @@ pub struct Job {
     handle: HANDLE,
 }
 
+unsafe impl Send for Job {}
+unsafe impl Sync for Job {}
+
 impl Job {
     /// Create an anonymous job object.
     pub fn create() -> Result<Self, JobError> {

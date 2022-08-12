@@ -111,20 +111,15 @@ mod tests {
             info.limit_working_memory(min, max);
 
             job.set_extended_limit_info(&mut info).unwrap();
+            job.assign_current_process().unwrap();
 
-            let test_vec_size = 8 * 1024 * 1024;
+            let test_vec_size = max * 4;
             let mut big_vec: Vec<u8> = Vec::with_capacity(test_vec_size);
             big_vec.resize_with(test_vec_size, || 1);
 
             let memory_info = get_process_memory_info(get_current_process()).unwrap();
-            println!("{}", memory_info.WorkingSetSize);
-            assert!(memory_info.WorkingSetSize >= max);
 
-            job.assign_current_process().unwrap();
-
-            let memory_info = get_process_memory_info(get_current_process()).unwrap();
-
-            assert!(memory_info.WorkingSetSize <= max);
+            assert!(memory_info.WorkingSetSize <= max * 2);
 
             info.clear_limits();
 
