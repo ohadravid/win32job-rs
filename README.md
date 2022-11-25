@@ -15,7 +15,7 @@ win32job = "1"
 
 ## Examples
 
-Limit the amount of memory that for this process (allocating more memory is still possible, but it will be paged):
+Limit the amount of memory that will be available for this process (allocating more memory is still possible, but it will be paged):
 
 ```rust
 use win32job::{Job, ExtendedLimitInfo};
