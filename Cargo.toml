@@ -18,8 +18,17 @@ keywords = ["job", "job-object", "win32"]
 default-target = "x86_64-pc-windows-msvc"
 
 [dependencies]
-winapi = { version = "0.3", features = ["handleapi", "winbase", "psapi", "processthreadsapi", "jobapi2", "basetsd"] }
 thiserror = "1.0"
+
+[dependencies.windows]
+version = "0.52"
+features = [
+    "Win32_Foundation",
+    "Win32_Security",
+    "Win32_System_JobObjects",
+    "Win32_System_Threading",
+    "Win32_System_ProcessStatus",
+]
 
 [dev-dependencies]
 rusty-fork = "0.3"

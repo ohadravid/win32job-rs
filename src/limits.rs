@@ -1,20 +1,27 @@
 use std::mem;
-use winapi::um::winbase::{
-    ABOVE_NORMAL_PRIORITY_CLASS, BELOW_NORMAL_PRIORITY_CLASS, HIGH_PRIORITY_CLASS,
-    IDLE_PRIORITY_CLASS, NORMAL_PRIORITY_CLASS, REALTIME_PRIORITY_CLASS,
+
+use windows::Win32::System::{
+    JobObjects::{
+        JOBOBJECT_EXTENDED_LIMIT_INFORMATION, JOB_OBJECT_LIMIT_AFFINITY,
+        JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE, JOB_OBJECT_LIMIT_PRIORITY_CLASS,
+        JOB_OBJECT_LIMIT_SCHEDULING_CLASS, JOB_OBJECT_LIMIT_WORKINGSET,
+    },
+    Threading::{
+        ABOVE_NORMAL_PRIORITY_CLASS, BELOW_NORMAL_PRIORITY_CLASS, HIGH_PRIORITY_CLASS,
+        IDLE_PRIORITY_CLASS, NORMAL_PRIORITY_CLASS, REALTIME_PRIORITY_CLASS,
+    },
 };
-use winapi::um::winnt::*;
 
 pub struct ExtendedLimitInfo(pub JOBOBJECT_EXTENDED_LIMIT_INFORMATION);
 
 #[repr(u32)]
 pub enum PriorityClass {
-    Normal = NORMAL_PRIORITY_CLASS,
-    Idle = IDLE_PRIORITY_CLASS,
-    High = HIGH_PRIORITY_CLASS,
-    Realtime = REALTIME_PRIORITY_CLASS,
-    BelowNormal = BELOW_NORMAL_PRIORITY_CLASS,
-    AboveNormal = ABOVE_NORMAL_PRIORITY_CLASS,
+    Normal = NORMAL_PRIORITY_CLASS.0,
+    Idle = IDLE_PRIORITY_CLASS.0,
+    High = HIGH_PRIORITY_CLASS.0,
+    Realtime = REALTIME_PRIORITY_CLASS.0,
+    BelowNormal = BELOW_NORMAL_PRIORITY_CLASS.0,
+    AboveNormal = ABOVE_NORMAL_PRIORITY_CLASS.0,
 }
 
 impl Default for ExtendedLimitInfo {
@@ -88,7 +95,7 @@ impl ExtendedLimitInfo {
 
     /// Clear all limits.
     pub fn clear_limits(&mut self) -> &mut Self {
-        self.0.BasicLimitInformation.LimitFlags = 0;
+        self.0.BasicLimitInformation.LimitFlags.0 = 0;
 
         self
     }
