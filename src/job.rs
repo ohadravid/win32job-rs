@@ -26,11 +26,9 @@ unsafe impl Sync for Job {}
 impl Job {
     /// Create an anonymous job object.
     pub fn create() -> Result<Self, JobError> {
-        unsafe {
-            CreateJobObjectW(None, PCWSTR::null())
-                .map_err(|e| JobError::CreateFailed(e.into()))
-                .map(|handle| Self { handle })
-        }
+        unsafe { CreateJobObjectW(None, PCWSTR::null()) }
+            .map_err(|e| JobError::CreateFailed(e.into()))
+            .map(|handle| Self { handle })
     }
 
     /// Create an anonymous job object and sets it's limit according to `info`.
@@ -70,8 +68,8 @@ impl Job {
                 mem::size_of_val(&info.0) as u32,
                 None,
             )
-            .map_err(|e| JobError::GetInfoFailed(e.into()))?;
         }
+        .map_err(|e| JobError::GetInfoFailed(e.into()))?;
         Ok(info)
     }
 
@@ -93,10 +91,8 @@ impl Job {
     /// Assigns a process to the job object.
     /// See also [Microsoft Docs](https://docs.microsoft.com/en-us/windows/win32/api/jobapi2/nf-jobapi2-assignprocesstojobobject).
     pub fn assign_process(&self, proc_handle: HANDLE) -> Result<(), JobError> {
-        unsafe {
-            AssignProcessToJobObject(self.handle, proc_handle)
-                .map_err(|e| JobError::AssignFailed(e.into()))
-        }
+        unsafe { AssignProcessToJobObject(self.handle, proc_handle) }
+            .map_err(|e| JobError::AssignFailed(e.into()))
     }
 
     /// Assigns the current process to the job object.

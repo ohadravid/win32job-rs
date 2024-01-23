@@ -32,8 +32,8 @@ impl Job {
                 mem::size_of_val(&proc_id_list) as u32,
                 None,
             )
-            .map_err(|e| JobError::GetInfoFailed(e.into()))?;
         }
+        .map_err(|e| JobError::GetInfoFailed(e.into()))?;
 
         let list = &proc_id_list.list[..proc_id_list.header.NumberOfProcessIdsInList as usize];
 

@@ -26,9 +26,9 @@ pub fn get_process_memory_info(
             &mut counters as *mut _,
             mem::size_of::<PROCESS_MEMORY_COUNTERS>() as u32,
         )
-        .map_err(|e| e.into())
-        .map(|_| counters)
     }
+    .map_err(|e| e.into())
+    .map(|_| counters)
 }
 
 /// Retrieves the process affinity mask for the specified process and the system affinity mask for the system.
@@ -43,7 +43,7 @@ pub fn get_process_affinity_mask(process_handle: HANDLE) -> Result<(usize, usize
             &mut process_affinity_mask as *mut _,
             &mut system_affinity_mask as *mut _,
         )
-        .map_err(|e| e.into())
-        .map(|_| (process_affinity_mask, system_affinity_mask))
     }
+    .map_err(|e| e.into())
+    .map(|_| (process_affinity_mask, system_affinity_mask))
 }
