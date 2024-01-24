@@ -1,10 +1,17 @@
+use windows::{
+    core::PCWSTR,
+    Win32::{
+        Foundation::{CloseHandle, HANDLE},
+        System::JobObjects::{
+            AssignProcessToJobObject, CreateJobObjectW, JobObjectExtendedLimitInformation,
+            QueryInformationJobObject, SetInformationJobObject,
+        },
+    },
+};
+
 use crate::error::JobError;
 use crate::limits::ExtendedLimitInfo;
-use std::{io, mem, ptr};
-use winapi::shared::minwindef::*;
-use winapi::um::handleapi::*;
-use winapi::um::jobapi2::*;
-use winapi::um::winnt::*;
+use std::{ffi::c_void, mem};
 
 pub use crate::utils::{get_current_process, get_process_memory_info};
 
@@ -19,13 +26,9 @@ unsafe impl Sync for Job {}
 impl Job {
     /// Create an anonymous job object.
     pub fn create() -> Result<Self, JobError> {
-        let job_handle = unsafe { CreateJobObjectW(ptr::null_mut(), ptr::null()) };
-
-        if job_handle.is_null() {
-            return Err(JobError::CreateFailed(io::Error::last_os_error()));
-        }
-
-        Ok(Job { handle: job_handle })
+        unsafe { CreateJobObjectW(None, PCWSTR::null()) }
+            .map_err(|e| JobError::CreateFailed(e.into()))
+            .map(|handle| Self { handle })
     }
 
     /// Create an anonymous job object and sets it's limit according to `info`.
@@ -55,55 +58,41 @@ impl Job {
     /// Return basic and extended limit information for a job object.
     /// See also [Microsoft Docs](https://docs.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-jobobject_extended_limit_information).
     pub fn query_extended_limit_info(&self) -> Result<ExtendedLimitInfo, JobError> {
-        let mut info = ExtendedLimitInfo::new();
+        let mut info = ExtendedLimitInfo::default();
 
-        let return_value = unsafe {
+        unsafe {
             QueryInformationJobObject(
                 self.handle,
                 JobObjectExtendedLimitInformation,
-                &mut info.0 as *mut _ as LPVOID,
-                mem::size_of_val(&info) as DWORD,
-                0 as *mut _,
+                &mut info.0 as *mut _ as *mut c_void,
+                mem::size_of_val(&info.0) as u32,
+                None,
             )
-        };
-
-        if return_value == 0 {
-            Err(JobError::GetInfoFailed(io::Error::last_os_error()))
-        } else {
-            Ok(info)
         }
+        .map_err(|e| JobError::GetInfoFailed(e.into()))?;
+        Ok(info)
     }
 
     /// Set the basic and extended limit information for a job object.
     /// Note: This method shouldn't change the provided `info`, but the internal Windows API
     /// require a mutable pointer, which means this function requires &mut as well.
     pub fn set_extended_limit_info(&self, info: &mut ExtendedLimitInfo) -> Result<(), JobError> {
-        let return_value = unsafe {
+        unsafe {
             SetInformationJobObject(
                 self.handle,
                 JobObjectExtendedLimitInformation,
-                &mut info.0 as *mut _ as LPVOID,
-                mem::size_of_val(&info.0) as DWORD,
+                &info.0 as *const _ as *const c_void,
+                mem::size_of_val(&info.0) as u32,
             )
-        };
-
-        if return_value == 0 {
-            Err(JobError::SetInfoFailed(io::Error::last_os_error()))
-        } else {
-            Ok(())
+            .map_err(|e| JobError::SetInfoFailed(e.into()))
         }
     }
 
     /// Assigns a process to the job object.
     /// See also [Microsoft Docs](https://docs.microsoft.com/en-us/windows/win32/api/jobapi2/nf-jobapi2-assignprocesstojobobject).
     pub fn assign_process(&self, proc_handle: HANDLE) -> Result<(), JobError> {
-        let return_value = unsafe { AssignProcessToJobObject(self.handle, proc_handle) };
-
-        if return_value == 0 {
-            Err(JobError::AssignFailed(io::Error::last_os_error()))
-        } else {
-            Ok(())
-        }
+        unsafe { AssignProcessToJobObject(self.handle, proc_handle) }
+            .map_err(|e| JobError::AssignFailed(e.into()))
     }
 
     /// Assigns the current process to the job object.
@@ -117,15 +106,16 @@ impl Job {
 impl Drop for Job {
     fn drop(&mut self) {
         unsafe {
-            CloseHandle(self.handle);
+            let _ = CloseHandle(self.handle);
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use windows::Win32::System::JobObjects::JOB_OBJECT_LIMIT_WORKINGSET;
+
     use crate::Job;
-    use winapi::um::winnt::JOB_OBJECT_LIMIT_WORKINGSET;
 
     #[test]
     fn it_works() {
@@ -133,7 +123,7 @@ mod tests {
 
         let mut info = job.query_extended_limit_info().unwrap();
 
-        assert_eq!(info.0.BasicLimitInformation.LimitFlags, 0);
+        assert_eq!(info.0.BasicLimitInformation.LimitFlags.0, 0);
 
         // This is the default.
         assert_eq!(info.0.BasicLimitInformation.SchedulingClass, 5);
@@ -146,7 +136,7 @@ mod tests {
         job.set_extended_limit_info(&mut info).unwrap();
 
         // Clear limits.
-        info.0.BasicLimitInformation.LimitFlags = 0;
+        info.0.BasicLimitInformation.LimitFlags.0 = 0;
         job.set_extended_limit_info(&mut info).unwrap();
     }
 }

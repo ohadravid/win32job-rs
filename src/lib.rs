@@ -56,7 +56,7 @@
 //! ```edition2018
 //! use win32job::*;
 //! # fn main() -> Result<(), JobError> {
-//! use winapi::um::winnt::JOB_OBJECT_LIMIT_WORKINGSET;
+//! use windows::Win32::System::JobObjects::JOB_OBJECT_LIMIT_WORKINGSET;
 //!
 //! let job = Job::create()?;
 //! let mut info = job.query_extended_limit_info()?;

@@ -1,15 +1,14 @@
-use std::{io, mem};
-use winapi::shared::basetsd::*;
-use winapi::shared::minwindef::*;
-use winapi::um::jobapi2::*;
-use winapi::um::winnt::*;
+use std::{ffi::c_void, mem};
+use windows::Win32::System::JobObjects::{
+    JobObjectBasicProcessIdList, QueryInformationJobObject, JOBOBJECT_BASIC_PROCESS_ID_LIST,
+};
 
 use crate::{Job, JobError};
 
 #[repr(C)]
 struct ProcessIdList {
     header: JOBOBJECT_BASIC_PROCESS_ID_LIST,
-    list: [ULONG_PTR; 1024],
+    list: [usize; 1024],
 }
 
 impl Job {
@@ -25,19 +24,16 @@ impl Job {
             list: [0usize; 1024],
         };
 
-        let return_value = unsafe {
+        unsafe {
             QueryInformationJobObject(
                 self.handle(),
                 JobObjectBasicProcessIdList,
-                &mut proc_id_list as *mut _ as LPVOID,
-                mem::size_of_val(&proc_id_list) as DWORD,
-                0 as *mut _,
+                &mut proc_id_list as *mut _ as *mut c_void,
+                mem::size_of_val(&proc_id_list) as u32,
+                None,
             )
-        };
-
-        if return_value == 0 {
-            return Err(JobError::GetInfoFailed(io::Error::last_os_error()));
         }
+        .map_err(|e| JobError::GetInfoFailed(e.into()))?;
 
         let list = &proc_id_list.list[..proc_id_list.header.NumberOfProcessIdsInList as usize];
 
