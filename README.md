@@ -1,5 +1,7 @@
 # win32job
-![crates.io](https://img.shields.io/crates/v/win32job.svg)
+
+[![docs.rs](https://docs.rs/win32job/badge.svg)](https://docs.rs/crate/win32job)
+[![crates.io](https://img.shields.io/crates/v/win32job.svg)](https://crates.io/crates/win32job)
 
 [Documentation](https://docs.rs/crate/win32job)
 
@@ -7,7 +9,6 @@ A safe API for Windows' [job objects](https://docs.microsoft.com/en-us/windows/w
 which can be used to set various limits to processes associated with them. 
 
 ```toml
-# Cargo.toml
 [dependencies]
 win32job = "1"
 ```
