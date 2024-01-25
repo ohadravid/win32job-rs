@@ -13,6 +13,7 @@ use windows::Win32::System::{
 #[derive(Debug)]
 pub struct ExtendedLimitInfo(pub(crate) JOBOBJECT_EXTENDED_LIMIT_INFORMATION);
 
+#[derive(Debug, Clone, Copy)]
 #[repr(u32)]
 pub enum PriorityClass {
     Normal = NORMAL_PRIORITY_CLASS.0,
