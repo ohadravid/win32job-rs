@@ -14,6 +14,8 @@ jobs:
       
       - name: Check semver
         uses: obi1kenobi/cargo-semver-checks-action@v2
+      - name: Cleanup
+        run: rm -r -force semver-checks
 
       - uses: actions-rs/toolchain@v1
         with:
