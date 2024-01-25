@@ -13,11 +13,11 @@ use crate::error::JobError;
 use crate::limits::ExtendedLimitInfo;
 use std::{ffi::c_void, mem};
 
-pub use crate::utils::{get_current_process, get_process_memory_info};
+pub use crate::utils::get_current_process;
 
 #[derive(Debug)]
 pub struct Job {
-    handle: HANDLE,
+    pub(crate) handle: HANDLE,
 }
 
 unsafe impl Send for Job {}
@@ -43,16 +43,16 @@ impl Job {
 
     /// Return the underlying handle to the job.
     /// Note that this handle will be closed once the `Job` object is dropped.
-    pub fn handle(&self) -> HANDLE {
-        self.handle
+    pub fn handle(&self) -> isize {
+        self.handle.0
     }
 
     /// Return the underlying handle to the job, consuming the job.
     /// Note that the handle will NOT be closed, so it is the caller's responsibly to close it.
-    pub fn into_handle(self) -> HANDLE {
+    pub fn into_handle(self) -> isize {
         let job = mem::ManuallyDrop::new(self);
 
-        job.handle
+        job.handle.0
     }
 
     /// Return basic and extended limit information for a job object.
@@ -74,9 +74,7 @@ impl Job {
     }
 
     /// Set the basic and extended limit information for a job object.
-    /// Note: This method shouldn't change the provided `info`, but the internal Windows API
-    /// require a mutable pointer, which means this function requires &mut as well.
-    pub fn set_extended_limit_info(&self, info: &mut ExtendedLimitInfo) -> Result<(), JobError> {
+    pub fn set_extended_limit_info(&self, info: &ExtendedLimitInfo) -> Result<(), JobError> {
         unsafe {
             SetInformationJobObject(
                 self.handle,
@@ -90,8 +88,8 @@ impl Job {
 
     /// Assigns a process to the job object.
     /// See also [Microsoft Docs](https://docs.microsoft.com/en-us/windows/win32/api/jobapi2/nf-jobapi2-assignprocesstojobobject).
-    pub fn assign_process(&self, proc_handle: HANDLE) -> Result<(), JobError> {
-        unsafe { AssignProcessToJobObject(self.handle, proc_handle) }
+    pub fn assign_process(&self, proc_handle: isize) -> Result<(), JobError> {
+        unsafe { AssignProcessToJobObject(self.handle, HANDLE(proc_handle)) }
             .map_err(|e| JobError::AssignFailed(e.into()))
     }
 
@@ -99,7 +97,7 @@ impl Job {
     pub fn assign_current_process(&self) -> Result<(), JobError> {
         let current_proc_handle = get_current_process();
 
-        self.assign_process(current_proc_handle)
+        self.assign_process(current_proc_handle.0)
     }
 }
 
