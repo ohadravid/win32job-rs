@@ -97,7 +97,7 @@ impl Job {
     pub fn assign_current_process(&self) -> Result<(), JobError> {
         let current_proc_handle = get_current_process();
 
-        self.assign_process(current_proc_handle.0)
+        self.assign_process(current_proc_handle)
     }
 }
 

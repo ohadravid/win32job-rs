@@ -125,7 +125,7 @@ mod tests {
 
             let memory_info = get_process_memory_info(get_current_process()).unwrap();
 
-            assert!(memory_info.WorkingSetSize <= max * 2);
+            assert!(memory_info.working_set_size <= max * 2);
 
             info.clear_limits();
 
