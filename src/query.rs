@@ -6,6 +6,7 @@ use windows::Win32::System::JobObjects::{
 use crate::{Job, JobError};
 
 #[repr(C)]
+#[derive(Debug)]
 struct ProcessIdList {
     header: JOBOBJECT_BASIC_PROCESS_ID_LIST,
     list: [usize; 1024],
@@ -20,13 +21,13 @@ impl Job {
         // This can be fixed by calling `QueryInformationJobObject` a second time,
         // with a bigger list with the correct size (as returned from the first call).
         let mut proc_id_list = ProcessIdList {
-            header: unsafe { mem::zeroed() },
+            header: Default::default(),
             list: [0usize; 1024],
         };
 
         unsafe {
             QueryInformationJobObject(
-                self.handle(),
+                self.handle,
                 JobObjectBasicProcessIdList,
                 &mut proc_id_list as *mut _ as *mut c_void,
                 mem::size_of_val(&proc_id_list) as u32,
@@ -35,9 +36,15 @@ impl Job {
         }
         .map_err(|e| JobError::GetInfoFailed(e.into()))?;
 
-        let list = &proc_id_list.list[..proc_id_list.header.NumberOfProcessIdsInList as usize];
+        let list = proc_id_list
+            .header
+            .ProcessIdList
+            .into_iter()
+            .chain(proc_id_list.list)
+            .take(proc_id_list.header.NumberOfProcessIdsInList as usize)
+            .collect();
 
-        Ok(list.to_vec())
+        Ok(list)
     }
 }
 
@@ -56,7 +63,11 @@ mod tests {
 
         let pids = job.query_process_id_list().unwrap();
 
+        let current_process_id = std::process::id() as usize;
+
         // It's not equal to 1 because sometime we "catch" `rusty_fork_test` sub procs.
         assert!(pids.len() >= 1);
+
+        assert!(pids.contains(&current_process_id));
     }
 }
