@@ -39,9 +39,15 @@ impl Job {
             return Err(JobError::GetInfoFailed(io::Error::last_os_error()));
         }
 
-        let list = &proc_id_list.list[..proc_id_list.header.NumberOfProcessIdsInList as usize];
+        let list = proc_id_list
+            .header
+            .ProcessIdList
+            .into_iter()
+            .chain(proc_id_list.list)
+            .take(proc_id_list.header.NumberOfProcessIdsInList as usize)
+            .collect();
 
-        Ok(list.to_vec())
+        Ok(list)
     }
 }
 
@@ -60,7 +66,11 @@ mod tests {
 
         let pids = job.query_process_id_list().unwrap();
 
+        let current_process_id = std::process::id() as usize;
+
         // It's not equal to 1 because sometime we "catch" `rusty_fork_test` sub procs.
         assert!(pids.len() >= 1);
+
+        assert!(pids.contains(&current_process_id));
     }
 }
