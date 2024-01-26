@@ -10,7 +10,7 @@
 //! or by creating an empty one using `new()`, use helper methods to configure
 //! the required limits, and finally set the info to the job.
 //!
-//! ```edition2018
+//! ```edition2021
 //! use win32job::*;
 //! # fn main() -> Result<(), JobError> {
 //!
@@ -28,7 +28,7 @@
 //! ```
 //!
 //! Which is equivalnent to:
-//! ```edition2018
+//! ```edition2021
 //! use win32job::*;
 //! # fn main() -> Result<(), JobError> {
 //!
@@ -37,33 +37,6 @@
 //!
 //! info.limit_working_memory(1 * 1024 * 1024,  4 * 1024 * 1024)
 //!     .limit_priority_class(PriorityClass::BelowNormal);
-//!
-//! job.set_extended_limit_info(&mut info)?;
-//! job.assign_current_process()?;
-//! #   info.clear_limits();
-//! #   job.set_extended_limit_info(&mut info)?;
-//! #   Ok(())
-//! # }
-//! ```
-//!
-//! # Using the low level API
-//!
-//! The most basic API is getting an `ExtendedLimitInfo` object and
-//! manipulating the raw `JOBOBJECT_BASIC_LIMIT_INFORMATION`, and then set it back to the job.
-//!
-//! It's important to remeber to set the needed `LimitFlags` for each limit used.
-//!
-//! ```edition2018
-//! use win32job::*;
-//! # fn main() -> Result<(), JobError> {
-//! use windows::Win32::System::JobObjects::JOB_OBJECT_LIMIT_WORKINGSET;
-//!
-//! let job = Job::create()?;
-//! let mut info = job.query_extended_limit_info()?;
-//!
-//! info.0.BasicLimitInformation.MinimumWorkingSetSize = 1 * 1024 * 1024;
-//! info.0.BasicLimitInformation.MaximumWorkingSetSize = 4 * 1024 * 1024;
-//! info.0.BasicLimitInformation.LimitFlags |= JOB_OBJECT_LIMIT_WORKINGSET;
 //!
 //! job.set_extended_limit_info(&mut info)?;
 //! job.assign_current_process()?;

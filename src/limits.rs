@@ -1,5 +1,3 @@
-use std::mem;
-
 use windows::Win32::System::{
     JobObjects::{
         JOBOBJECT_EXTENDED_LIMIT_INFORMATION, JOB_OBJECT_LIMIT_AFFINITY,
@@ -12,8 +10,10 @@ use windows::Win32::System::{
     },
 };
 
-pub struct ExtendedLimitInfo(pub JOBOBJECT_EXTENDED_LIMIT_INFORMATION);
+#[derive(Debug)]
+pub struct ExtendedLimitInfo(pub(crate) JOBOBJECT_EXTENDED_LIMIT_INFORMATION);
 
+#[derive(Debug, Clone, Copy)]
 #[repr(u32)]
 pub enum PriorityClass {
     Normal = NORMAL_PRIORITY_CLASS.0,
@@ -36,7 +36,7 @@ impl Default for ExtendedLimitInfo {
 impl ExtendedLimitInfo {
     /// Return an empty extended info objects, without any limits.
     pub fn new() -> Self {
-        let inner: JOBOBJECT_EXTENDED_LIMIT_INFORMATION = unsafe { mem::zeroed() };
+        let inner = Default::default();
         ExtendedLimitInfo(inner)
     }
 
@@ -126,7 +126,7 @@ mod tests {
 
             let memory_info = get_process_memory_info(get_current_process()).unwrap();
 
-            assert!(memory_info.WorkingSetSize <= max * 2);
+            assert!(memory_info.working_set_size <= max * 2);
 
             info.clear_limits();
 
