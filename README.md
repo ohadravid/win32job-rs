@@ -10,7 +10,7 @@ which can be used to set various limits to processes associated with them.
 
 ```toml
 [dependencies]
-win32job = "1"
+win32job = "2"
 ```
 
 
