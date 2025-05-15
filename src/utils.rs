@@ -11,7 +11,7 @@ use windows::Win32::{
 /// Return a pseudo handle to the current process.
 /// See also [Microsoft Docs](https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getcurrentprocess) for this function.
 pub fn get_current_process() -> isize {
-    unsafe { GetCurrentProcess() }.0
+    unsafe { GetCurrentProcess() }.0 as _
 }
 
 #[derive(Debug, Clone)]
@@ -34,7 +34,7 @@ pub fn get_process_memory_info(process_handle: isize) -> Result<ProcessMemoryCou
     let mut counters = PROCESS_MEMORY_COUNTERS_EX::default();
     unsafe {
         GetProcessMemoryInfo(
-            HANDLE(process_handle),
+            HANDLE(process_handle as _),
             &mut counters as *mut _ as *mut _,
             mem::size_of_val(&counters) as u32,
         )
@@ -62,7 +62,7 @@ pub fn get_process_affinity_mask(process_handle: isize) -> Result<(usize, usize)
 
     unsafe {
         GetProcessAffinityMask(
-            HANDLE(process_handle),
+            HANDLE(process_handle as _),
             &mut process_affinity_mask as *mut _,
             &mut system_affinity_mask as *mut _,
         )

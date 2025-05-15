@@ -42,7 +42,7 @@ impl Job {
     /// Return the underlying handle to the job.
     /// Note that this handle will be closed once the `Job` object is dropped.
     pub fn handle(&self) -> isize {
-        self.handle.0
+        self.handle.0 as _
     }
 
     /// Return the underlying handle to the job, consuming the job.
@@ -50,7 +50,7 @@ impl Job {
     pub fn into_handle(self) -> isize {
         let job = mem::ManuallyDrop::new(self);
 
-        job.handle.0
+        job.handle.0 as _
     }
 
     /// Return basic and extended limit information for a job object.
@@ -60,7 +60,7 @@ impl Job {
 
         unsafe {
             QueryInformationJobObject(
-                self.handle,
+                Some(self.handle),
                 JobObjectExtendedLimitInformation,
                 &mut info.0 as *mut _ as *mut c_void,
                 mem::size_of_val(&info.0) as u32,
@@ -87,7 +87,7 @@ impl Job {
     /// Assigns a process to the job object.
     /// See also [Microsoft Docs](https://docs.microsoft.com/en-us/windows/win32/api/jobapi2/nf-jobapi2-assignprocesstojobobject).
     pub fn assign_process(&self, proc_handle: isize) -> Result<(), JobError> {
-        unsafe { AssignProcessToJobObject(self.handle, HANDLE(proc_handle)) }
+        unsafe { AssignProcessToJobObject(self.handle, HANDLE(proc_handle as _)) }
             .map_err(|e| JobError::AssignFailed(e.into()))
     }
 

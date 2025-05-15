@@ -27,7 +27,7 @@ impl Job {
 
         unsafe {
             QueryInformationJobObject(
-                self.handle,
+                Some(self.handle),
                 JobObjectBasicProcessIdList,
                 &mut proc_id_list as *mut _ as *mut c_void,
                 mem::size_of_val(&proc_id_list) as u32,
