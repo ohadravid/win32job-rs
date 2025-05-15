@@ -1,6 +1,6 @@
 [package]
 name = "win32job"
-version = "2.0.2"
+version = "2.0.3"
 authors = ["Ohad Ravid <ohad.rv@gmail.com>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
@@ -21,7 +21,7 @@ default-target = "x86_64-pc-windows-msvc"
 thiserror = "1.0"
 
 [dependencies.windows]
-version = "0.52"
+version = "0.61"
 features = [
     "Win32_Foundation",
     "Win32_Security",
