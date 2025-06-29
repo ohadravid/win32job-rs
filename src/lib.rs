@@ -1,5 +1,3 @@
-//! # wun32job-rs
-//!
 //! A safe API for Windows' job objects, which can be used to set various limits to
 //! processes associated with them.
 //! See also [Microsoft Docs](https://docs.microsoft.com/en-us/windows/win32/api/jobapi2/nf-jobapi2-createjobobjectw).
