@@ -52,6 +52,7 @@ pub mod utils;
 pub use crate::error::JobError;
 pub use crate::job::Job;
 pub use crate::limits::{ExtendedLimitInfo, PriorityClass};
+pub use crate::query::BasicAndIoAccountingInfo;
 
 // Cannot use `cfg(test)` here since `rustdoc` won't look at it.
 #[cfg(debug_assertions)]
