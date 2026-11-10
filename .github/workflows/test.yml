@@ -5,9 +5,9 @@ on: [push, pull_request]
 jobs:
   test:
     name: test
-    runs-on: windows-2019
+    runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 1
 
